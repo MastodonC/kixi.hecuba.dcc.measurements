@@ -1,3 +1,4 @@
+
 (ns kixi.hecuba.measurements.parser-test
   (:require [kixi.hecuba.measurements.parser :refer :all]
             [clojure.test :refer :all]
@@ -7,4 +8,7 @@
 
 (deftest parser-test
   (testing "parsing expected measurement xml structure"
-    (is (= (process measurement-string) nil))))
+    (let [measurement-data (process measurement-string)]
+      (is (== (count measurement-data) 49))
+      (is (every? #(number? (bigdec (:value %))) measurement-data))
+      (is (every? #(#{"electricityConsumption" "gasConsumption"} (:type %)) measurement-data)))))
