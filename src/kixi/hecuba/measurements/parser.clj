@@ -2,15 +2,15 @@
   (:require [clojure.data.xml :as xml]
             [com.rpl.specter :as specter]))
 
-(defn has-tag?
+(defn- has-tag?
   [tag element]
   (= (:tag element) tag))
 
-(defn gas-or-electricity?
+(defn- gas-or-electricity?
   [element]
   (or (has-tag? :Electricity element) (has-tag? :Gas element)))
 
-(defn correlation-id
+(defn- correlation-id
   [parsed]
   (->> parsed
        (specter/select-one [:content
@@ -19,7 +19,7 @@
                             :content])
        first))
 
-(defn measurement-type
+(defn- measurement-type
   [measurement]
   (get
    {:Electricity "electricityConsumption"
@@ -29,7 +29,7 @@
                         (partial gas-or-electricity?)
                         :tag] measurement)))
 
-(defn measurement-value
+(defn- measurement-value
   [measurement]
   (first (specter/select-one [:content
                               specter/ALL
@@ -39,20 +39,20 @@
                               (partial has-tag? :PrimaryValue)
                               :content] measurement)))
 
-(defn measurement-timestamp
+(defn- measurement-timestamp
   [measurement]
   (first (specter/select-one [:content
                               specter/ALL
                               (partial has-tag? :Timestamp)
                               :content] measurement)))
 
-(defn measurement-information
+(defn- measurement-information
   [measurement]
   (hash-map :type (measurement-type measurement)
             :value (measurement-value measurement)
             :timestamp (measurement-timestamp measurement)))
 
-(defn measurements
+(defn- measurements
   [parsed]
   (->> parsed
        (specter/select [:content
@@ -64,7 +64,7 @@
                         specter/ALL])
        (mapv measurement-information)))
 
-(defn parse
+(defn- parse
   [data-in]
   (xml/parse (java.io.StringReader. data-in)))
 
