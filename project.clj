@@ -1,4 +1,4 @@
-(defproject kixi.measurements.processor "0.1.0-SNAPSHOT"
+(defproject kixi.hecuba.measurements "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
@@ -14,6 +14,6 @@
                  [aero "1.0.3"]
                  [clj-http "3.6.0"]
                  [com.rpl/specter "1.0.1"]]
-  :profiles {:uberjar {:aot [kixi.measurements.processor]
-                       :main kixi.measurements.processor
-                       :uberjar-name "kafka-measurements-processor.jar"}})
+  :profiles {:uberjar {:aot [kixi.hecuba.measurements.processor]
+                       :main kixi.hecuba.measurements.processor
+                       :uberjar-name "kixi-hecuba-measurements.jar"}})

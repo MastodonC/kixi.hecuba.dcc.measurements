@@ -1,4 +1,4 @@
-(ns kixi.measurements.processor
+(ns kixi.hecuba.measurements.processor
   (:require [franzy.admin.zookeeper.defaults :as zk-defaults]
             [franzy.admin.zookeeper.client :as client]
             [franzy.admin.cluster :as cluster]
