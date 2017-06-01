@@ -50,8 +50,8 @@
   [measurement]
   (hash-map :type (measurement-type measurement)
             :value (measurement-value measurement)
-            :timestamp (measurement-timestamp measurement))
-  )
+            :timestamp (measurement-timestamp measurement)))
+
 (defn measurements
   [parsed]
   (->> parsed
@@ -63,8 +63,6 @@
                         :content
                         specter/ALL])
        (mapv measurement-information)))
-
-
 
 (defn parse
   [data-in]
