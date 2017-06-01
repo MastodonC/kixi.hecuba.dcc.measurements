@@ -1,4 +1,4 @@
-(ns kixi.hecuba.measurements.parser
+(ns kixi.hecuba.dcc.measurements.parser
   (:require [clojure.data.xml :as xml]
             [com.rpl.specter :as specter]))
 

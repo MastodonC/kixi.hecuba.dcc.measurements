@@ -1,4 +1,4 @@
-(ns kixi.hecuba.measurements.processor
+(ns kixi.hecuba.dcc.measurements.processor
   (:gen-class)
   (:require [aero.core :as aero]
             [clojure.java.io :as io]
@@ -8,7 +8,7 @@
             [franzy.admin.zookeeper
              [client :as client]
              [defaults :as zk-defaults]]
-            [kixi.hecuba.measurements
+            [kixi.hecuba.dcc.measurements
              [hecuba-api :refer [post-measurements]]
              [parser :refer [process]]]
             [taoensso.timbre :as log])

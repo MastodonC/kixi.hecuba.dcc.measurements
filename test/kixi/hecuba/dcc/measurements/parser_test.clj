@@ -1,6 +1,5 @@
-
-(ns kixi.hecuba.measurements.parser-test
-  (:require [kixi.hecuba.measurements.parser :refer :all]
+(ns kixi.hecuba.dcc.measurements.parser-test
+  (:require [kixi.hecuba.dcc.measurements.parser :refer :all]
             [clojure.test :refer :all]
             [clojure.java.io :as io]))
 

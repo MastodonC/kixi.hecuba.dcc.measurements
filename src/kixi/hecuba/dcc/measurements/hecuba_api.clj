@@ -1,4 +1,4 @@
-(ns kixi.hecuba.measurements.hecuba-api
+(ns kixi.hecuba.dcc.measurements.hecuba-api
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
             [taoensso.timbre :as timbre]))

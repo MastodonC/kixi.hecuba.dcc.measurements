@@ -1,5 +1,5 @@
-(ns kixi.hecuba.measurements.bootstrap
-  (:require [kixi.hecuba.measurements.processor :as m]
+(ns kixi.hecuba.dcc.measurements.bootstrap
+  (:require [kixi.hecuba.dcc.measurements.processor :as m]
             [taoensso.timbre :as log])
   (:gen-class))
 
