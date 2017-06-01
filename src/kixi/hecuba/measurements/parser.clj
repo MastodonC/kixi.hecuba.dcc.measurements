@@ -2,7 +2,6 @@
   (:require [clojure.data.xml :as xml]
             [com.rpl.specter :as specter]))
 
-
 (defn has-tag?
   [tag element]
   (= (:tag element) tag))
@@ -74,6 +73,6 @@
 (defn process
   "parse measurement xml and extract relevant data"
   [data-in]
-  (-> data-in
-      parse
-      measurements))
+  (let [parsed (parse data-in)]
+    (hash-map :measurements (measurements parsed)
+              :correlation-id (correlation-id parsed))))

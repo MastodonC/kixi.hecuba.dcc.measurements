@@ -1,14 +1,24 @@
 (ns kixi.hecuba.measurements.processor
-  (:require [franzy.admin.zookeeper.defaults :as zk-defaults]
-            [franzy.admin.zookeeper.client :as client]
-            [franzy.admin.cluster :as cluster]
+  (:gen-class)
+  (:require [aero.core :as aero]
+            [clojure.java.io :as io]
             [clojure.string :as cstr]
-            [taoensso.timbre :as log]
-            [environ.core :refer [env]])
-  (:import [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
+            [environ.core :refer [env]]
+            [franzy.admin.cluster :as cluster]
+            [franzy.admin.zookeeper
+             [client :as client]
+             [defaults :as zk-defaults]]
+            [kixi.hecuba.measurements
+             [hecuba-api :refer [post-measurements]]
+             [parser :refer [process]]]
+            [taoensso.timbre :as log])
+  (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
-           [org.apache.kafka.common.serialization Serdes])
-  (:gen-class))
+           [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
+           [java.io.ByteArrayInputStream]))
+
+(defn config [profile]
+  (aero/read-config (io/resource "config.edn") {:profile profile}))
 
 (defn get-broker-list
   [zk-conf]
@@ -23,30 +33,42 @@
       (first brokers)
       (cstr/join "," brokers))))
 
+(defn deserialize-message [bytes]
+  (try (-> bytes
+           java.io.ByteArrayInputStream.
+           io/reader
+           slurp)
+       (catch Exception e (log/info (.printStackTrace e)))
+       (finally (log/info ""))))
 
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
-  [data-in]
-  (-> data-in))
+  [hecuba data-in]
+  (let [{:keys [measurements correlation-id]} (-> data-in
+                                                  deserialize-message
+                                                  process)]
+    ;; TODO: look up entity-id and/or devide-id
+    (post-measurements hecuba measurements "entity-id" "device-id")))
 
 (defn start-stream []
-  (let [broker-list (broker-str {:servers (env :zk-connect)})
-        props {StreamsConfig/APPLICATION_ID_CONFIG,    (env :kafka-consumer-group)
+  (let [{:keys [hecuba kafka zookeeper] :as configuration} (config (keyword (env :profile)))
+        _ (log/info "CONFIGURATION" configuration)
+        broker-list (broker-str {:servers zookeeper})
+        props {StreamsConfig/APPLICATION_ID_CONFIG,  (:consumer-group kafka)
                StreamsConfig/BOOTSTRAP_SERVERS_CONFIG, broker-list
-               StreamsConfig/ZOOKEEPER_CONNECT_CONFIG, (env :zk-connect)
+               StreamsConfig/ZOOKEEPER_CONNECT_CONFIG, zookeeper
                StreamsConfig/TIMESTAMP_EXTRACTOR_CLASS_CONFIG "org.apache.kafka.streams.processor.WallclockTimestampExtractor"
                StreamsConfig/KEY_SERDE_CLASS_CONFIG,   (.getName (.getClass (Serdes/String)))
                StreamsConfig/VALUE_SERDE_CLASS_CONFIG, (.getName (.getClass (Serdes/ByteArray)))}
         builder (KStreamBuilder.)
         config (StreamsConfig. props)
-        input-topic (into-array String [(env :kafka-topic)])]
-    (log/infof "Zookeeper Address: %s" (env :zk-connect))
+        input-topic (into-array String [(:topic kafka)])]
+    (log/infof "Zookeeper Address: %s" zookeeper)
     (log/infof "Broker List: %s" broker-list)
-    (log/infof "Kafka Topic: %s" (env :kafka-topic))
-    (log/infof "Kafka Consumer Group: %s" (env :kafka-consumer-group))
-    (log/infof "S3 Bucket: %s" (env :s3-bucket))
+    (log/infof "Kafka Topic: %s" (:topic kafka))
+    (log/infof "Kafka Consumer Group: %s" (:consumer-group kafka))
     (do (->
          (.stream builder input-topic)
-         (.mapValues (reify ValueMapper (apply [_ v] (process-data v))))
+         (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba v))))
          (.print))
         (KafkaStreams. builder config))))

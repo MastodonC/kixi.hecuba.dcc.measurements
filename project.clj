@@ -15,6 +15,7 @@
                  [clj-http "3.6.0"]
                  [com.rpl/specter "1.0.1"]
                  [cheshire "5.7.1"]]
+  :main ^:skip-aot kixi.hecuba.measurements.bootstrap
   :profiles {:uberjar {:aot [kixi.hecuba.measurements.processor]
                        :main kixi.hecuba.measurements.processor
                        :uberjar-name "kixi-hecuba-measurements.jar"}})

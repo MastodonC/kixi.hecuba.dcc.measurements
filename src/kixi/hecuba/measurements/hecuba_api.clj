@@ -1,20 +1,20 @@
 (ns kixi.hecuba.measurements.hecuba-api
-  (:require  [clj-http.client :as http]
-             [cheshire.core :as json]
-             [environ.core :refer [env]]
-             [taoensso.timbre :as timbre]))
+  (:require [cheshire.core :as json]
+            [clj-http.client :as http]
+            [taoensso.timbre :as timbre]))
 
-(defn push-payload-to-hecuba
+(defn post-measurements
   "Create the http post request for measurements
   uploads"
-  [json-payload entity-id device-id]
+  [{:keys [endpoint username password]} json-payload entity-id device-id]
   (let [json-to-send (json/generate-string {:measurements json-payload})
-        endpoint (str (env :hecuba-endpoint) "entities/" entity-id "/devices/" device-id "/measurements/")]
+        _ (timbre/info endpoint username password)
+        endpoint (str endpoint "entities/" entity-id "/devices/" device-id "/measurements/")]
     (timbre/infof "Using endpoint: %s" endpoint)
 
     (try (http/post
           endpoint
-          {:basic-auth [(env :hecuba-username) (env :hecuba-password)]
+          {:basic-auth [username password]
            :body json-to-send
            :headers {"X-Api-Version" "2"}
            :content-type :json
