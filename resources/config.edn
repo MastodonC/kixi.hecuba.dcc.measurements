@@ -4,7 +4,8 @@
           :password ^:ref [:hecuba :login :password]}
  :zookeeper #profile {:local "localhost:2181/"}
  :kafka #profile {:local {:consumer-group "hecuba"
-                          :topic "hecuba.measurements"}}
+                          :topic "hecuba.measurements"
+                          :dead-letter "hecuba.measurements.error"}}
  :temporary-devices {:entity-id "entity-id"
                      :device-id {"electricityConsumption" "electricity-device-id"
                                  "gasConsumption" "gas-device-id"}}}

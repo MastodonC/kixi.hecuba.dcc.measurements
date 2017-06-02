@@ -14,7 +14,7 @@
             [taoensso.timbre :as log])
   (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
-           [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
+           [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper Predicate]
            [java.io.ByteArrayInputStream]))
 
 (defn config [profile]
@@ -46,6 +46,13 @@
   [temporary-devices device-type]
   (update-in temporary-devices [:device-id] #(get % device-type))  )
 
+(defn parse-data
+  "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
+  [data-in]
+  (-> data-in
+      deserialize-message
+      process))
+
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
   [hecuba temporary-devices data-in]
@@ -70,12 +77,24 @@
                StreamsConfig/VALUE_SERDE_CLASS_CONFIG, (.getName (.getClass (Serdes/ByteArray)))}
         builder (KStreamBuilder.)
         config (StreamsConfig. props)
-        input-topic (into-array String [(:topic kafka)])]
+        input-topic (into-array String [(:topic kafka)])
+        dead-letter-topic (into-array String [(:dead-letter kafka)])]
     (log/infof "Zookeeper Address: %s" zookeeper)
     (log/infof "Broker List: %s" broker-list)
     (log/infof "Kafka Topic: %s" (:topic kafka))
     (log/infof "Kafka Consumer Group: %s" (:consumer-group kafka))
-    (do (-> (.stream builder input-topic)
-            (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
-            (.print))
+    (do #_(let [partitioned-stream
+                dead-letter-topic-stream (.stream builder dead-letter-topic)]
+            (-> (aget partitioned-stream 0)
+                (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
+                (.print))
+            (-> (aget partitioned-stream 1)
+                (.to dead-letter-topic)))
+        (-> (.stream builder input-topic)
+            (.branch (reify Predicate (test [_ _ v] (try (do (parse-data v)
+                                                             true)
+                                                         (catch Throwable t
+                                                           (do (log/error t)
+                                                               false)))))
+                     (reify Predicate (test [_ _ _] true))))
         (KafkaStreams. builder config))))
