@@ -1,2 +1,0 @@
-(ns kixi.measurements.hecuba
-  )

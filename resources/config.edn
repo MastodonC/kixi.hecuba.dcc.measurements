@@ -1,0 +1,8 @@
+{:hecuba {:endpoint #profile {:local "http://localhost:8080/"}
+          :login #profile {:local #include #join [#env HOME "/.hecuba.login.edn"]}
+          :username ^:ref [:hecuba :login :username]
+          :password ^:ref [:hecuba :login :password]}
+
+ :zookeeper #profile {:local "localhost:2181/"}
+ :kafka #profile {:local {:consumer-group "hecuba"
+                          :topic "hecuba.measurements"}} }

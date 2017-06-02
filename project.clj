@@ -1,5 +1,5 @@
-(defproject kixi.measurements.processor "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+(defproject kixi.hecuba.dcc.measurements "0.1.0-SNAPSHOT"
+  :description "DCC: send measurements from kafka to hecuba"
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -13,7 +13,9 @@
                   :exclusions [com.taoensso/timbre]]
                  [aero "1.0.3"]
                  [clj-http "3.6.0"]
-                 [com.rpl/specter "1.0.1"]]
-  :profiles {:uberjar {:aot [kixi.measurements.processor]
-                       :main kixi.measurements.processor
-                       :uberjar-name "kafka-measurements-processor.jar"}})
+                 [com.rpl/specter "1.0.1"]
+                 [cheshire "5.7.1"]]
+  :main ^:skip-aot kixi.hecuba.dcc.measurements.bootstrap
+  :profiles {:uberjar {:aot [kixi.hecuba.dcc.measurements.bootstrap]
+                       :main kixi.hecuba.dcc.measurements.bootstrap
+                       :uberjar-name "kixi-hecuba-measurements.jar"}})
