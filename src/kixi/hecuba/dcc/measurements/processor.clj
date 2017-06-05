@@ -14,8 +14,7 @@
             [taoensso.timbre :as log])
   (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
-           [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper Predicate]
-           [java.io.ByteArrayInputStream]))
+           [org.apache.kafka.streams.kstream KStreamBuilder Predicate ValueMapper]))
 
 (defn config [profile]
   (aero/read-config (io/resource "config.edn") {:profile profile}))
@@ -56,8 +55,7 @@
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
   [hecuba temporary-devices data-in]
-  (let [_ (log/info "temporary-devices in" temporary-devices)
-        {:keys [measurements correlation-id]} (-> data-in
+  (let [{:keys [measurements correlation-id]} (-> data-in
                                                   deserialize-message
                                                   process)
         identifier (temporary-ids temporary-devices (-> measurements first :type))]
@@ -91,8 +89,7 @@
                                                                                                            (do (log/error t)
                                                                                                                false)))))
                                                                      (reify Predicate (test [_ _ _] true))])))
-              dead-letter-topic-stream (.stream builder dead-letter-topic)
-              ]
+              dead-letter-topic-stream (.stream builder dead-letter-topic)]
           (-> (aget partitioned-stream 0)
               (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
               (.print))
