@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.xml "0.0.8"]
-                 [org.apache.kafka/kafka-streams "0.10.0.1"]
+                 [org.apache.kafka/kafka-streams "0.10.2.1"]
                  [com.taoensso/timbre "4.8.0"]
                  [environ "1.1.0"]
                  [mastondonc/franzy "0.0.3"]

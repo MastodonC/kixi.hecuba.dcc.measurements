@@ -78,23 +78,24 @@
         builder (KStreamBuilder.)
         config (StreamsConfig. props)
         input-topic (into-array String [(:topic kafka)])
-        dead-letter-topic (into-array String [(:dead-letter kafka)])]
+        dead-letter-topic-name (:dead-letter kafka)
+        dead-letter-topic (into-array String [dead-letter-topic-name])]
     (log/infof "Zookeeper Address: %s" zookeeper)
     (log/infof "Broker List: %s" broker-list)
     (log/infof "Kafka Topic: %s" (:topic kafka))
     (log/infof "Kafka Consumer Group: %s" (:consumer-group kafka))
-    (do #_(let [partitioned-stream
-                dead-letter-topic-stream (.stream builder dead-letter-topic)]
-            (-> (aget partitioned-stream 0)
-                (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
-                (.print))
-            (-> (aget partitioned-stream 1)
-                (.to dead-letter-topic)))
-        (-> (.stream builder input-topic)
-            (.branch (reify Predicate (test [_ _ v] (try (do (parse-data v)
-                                                             true)
-                                                         (catch Throwable t
-                                                           (do (log/error t)
-                                                               false)))))
-                     (reify Predicate (test [_ _ _] true))))
+    (do (let [partitioned-stream (-> (.stream builder input-topic)
+                                     (.branch (into-array Predicate [(reify Predicate (test [_ _ v] (try (do (parse-data v)
+                                                                                                             true)
+                                                                                                         (catch Throwable t
+                                                                                                           (do (log/error t)
+                                                                                                               false)))))
+                                                                     (reify Predicate (test [_ _ _] true))])))
+              dead-letter-topic-stream (.stream builder dead-letter-topic)
+              ]
+          (-> (aget partitioned-stream 0)
+              (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
+              (.print))
+          (-> (aget partitioned-stream 1)
+              (.to dead-letter-topic-name)))
         (KafkaStreams. builder config))))
