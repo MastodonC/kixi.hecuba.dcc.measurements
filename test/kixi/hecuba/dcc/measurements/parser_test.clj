@@ -14,6 +14,5 @@
       (is (every? #(number? (bigdec (:value %))) measurement-data))
       (is (every? #(#{"electricityConsumption" "gasConsumption"} (:type %)) measurement-data))))
   (testing "parsing broken xml gives appropriate error"
-    (is nil (process nonsense-string))
-    (is nil (process incomplete-xml)))
-  (testing "parsing xml with invalid value gives error"))
+    (is (thrown? Exception (process incomplete-xml)))
+    (is (thrown? Exception (process nonsense-string))))  )
