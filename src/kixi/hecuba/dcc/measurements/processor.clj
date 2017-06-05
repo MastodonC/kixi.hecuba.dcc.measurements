@@ -14,8 +14,7 @@
             [taoensso.timbre :as log])
   (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
-           [org.apache.kafka.streams.kstream KStreamBuilder ValueMapper]
-           [java.io.ByteArrayInputStream]))
+           [org.apache.kafka.streams.kstream KStreamBuilder Predicate ValueMapper]))
 
 (defn config [profile]
   (aero/read-config (io/resource "config.edn") {:profile profile}))
@@ -41,17 +40,28 @@
        (catch Exception e (log/info (.printStackTrace e)))
        (finally (log/info ""))))
 
+(defn temporary-ids
+  "only to be used until we implement a correspondence from correlation id"
+  [temporary-devices device-type]
+  (update-in temporary-devices [:device-id] #(get % device-type))  )
+
+(defn parse-data
+  "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
+  [data-in]
+  (-> data-in
+      deserialize-message
+      process))
+
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
-  [hecuba data-in]
-  (let [{:keys [measurements correlation-id]} (-> data-in
-                                                  deserialize-message
-                                                  process)]
+  [hecuba temporary-devices data-in]
+  (let [{:keys [measurements correlation-id]} (parse-data data-in)
+        identifier (temporary-ids temporary-devices (-> measurements first :type))]
     ;; TODO: look up entity-id and/or devide-id
-    (post-measurements hecuba measurements "entity-id" "device-id")))
+    (post-measurements hecuba measurements (:entity-id identifier) (:device-id identifier))))
 
 (defn start-stream []
-  (let [{:keys [hecuba kafka zookeeper] :as configuration} (config (keyword (env :profile)))
+  (let [{:keys [hecuba kafka zookeeper temporary-devices] :as configuration} (config (keyword (env :profile)))
         _ (log/info "CONFIGURATION" configuration)
         broker-list (broker-str {:servers zookeeper})
         props {StreamsConfig/APPLICATION_ID_CONFIG,  (:consumer-group kafka)
@@ -62,13 +72,24 @@
                StreamsConfig/VALUE_SERDE_CLASS_CONFIG, (.getName (.getClass (Serdes/ByteArray)))}
         builder (KStreamBuilder.)
         config (StreamsConfig. props)
-        input-topic (into-array String [(:topic kafka)])]
+        input-topic (into-array String [(:topic kafka)])
+        dead-letter-topic-name (:dead-letter kafka)
+        dead-letter-topic (into-array String [dead-letter-topic-name])]
     (log/infof "Zookeeper Address: %s" zookeeper)
     (log/infof "Broker List: %s" broker-list)
     (log/infof "Kafka Topic: %s" (:topic kafka))
     (log/infof "Kafka Consumer Group: %s" (:consumer-group kafka))
-    (do (->
-         (.stream builder input-topic)
-         (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba v))))
-         (.print))
+    (do (let [partitioned-stream (.branch (.stream builder input-topic)
+                                          (into-array Predicate [(reify Predicate (test [_ _ v] (try (do (parse-data v)
+                                                                                                         true)
+                                                                                                     (catch Throwable t
+                                                                                                       (do (log/error t)
+                                                                                                           false)))))
+                                                                 (reify Predicate (test [_ _ _] true))]))
+              dead-letter-topic-stream (.stream builder dead-letter-topic)]
+          (-> (aget partitioned-stream 0)
+              (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
+              (.print))
+          (-> (aget partitioned-stream 1)
+              (.to dead-letter-topic-name)))
         (KafkaStreams. builder config))))

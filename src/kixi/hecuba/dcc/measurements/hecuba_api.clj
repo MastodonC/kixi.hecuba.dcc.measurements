@@ -1,7 +1,8 @@
 (ns kixi.hecuba.dcc.measurements.hecuba-api
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [franzy.admin.zookeeper.client :as client]))
 
 (defn post-measurements
   "Create the http post request for measurements
