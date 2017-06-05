@@ -55,11 +55,8 @@
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
   [hecuba temporary-devices data-in]
-  (let [{:keys [measurements correlation-id]} (-> data-in
-                                                  deserialize-message
-                                                  process)
+  (let [{:keys [measurements correlation-id]} (parse-data data-in)
         identifier (temporary-ids temporary-devices (-> measurements first :type))]
-    (log/info "identifier" identifier)
     ;; TODO: look up entity-id and/or devide-id
     (post-measurements hecuba measurements (:entity-id identifier) (:device-id identifier))))
 
