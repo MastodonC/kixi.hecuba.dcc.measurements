@@ -1,11 +1,9 @@
-{:hecuba {:endpoint #profile {:local "http://localhost:8080/"}
+{:hecuba {:endpoint #profile {:local "http://www.getembed.com/"}
           :login #profile {:local #include #join [#env HOME "/.hecuba.login.edn"]}
           :username ^:ref [:hecuba :login :username]
           :password ^:ref [:hecuba :login :password]}
  :zookeeper #profile {:local "localhost:2181/"}
  :kafka #profile {:local {:consumer-group "hecuba"
                           :topic "hecuba.measurements"
-                          :dead-letter "hecuba.measurements.error"}}
- :temporary-devices {:entity-id "entity-id"
-                     :device-id {"electricityConsumption" "electricity-device-id"
-                                 "gasConsumption" "gas-device-id"}}}
+
+                          :dead-letter "hecuba.measurements.error"}}}

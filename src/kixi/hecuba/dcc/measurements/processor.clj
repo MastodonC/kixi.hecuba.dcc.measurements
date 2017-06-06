@@ -9,9 +9,10 @@
              [client :as client]
              [defaults :as zk-defaults]]
             [kixi.hecuba.dcc.measurements
-             [hecuba-api :refer [post-measurements]]
+             [hecuba-api :refer [post-measurements get-entities]]
              [parser :refer [process]]]
-            [taoensso.timbre :as log])
+            [taoensso.timbre :as log]
+            [com.rpl.specter :as specter])
   (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.streams KafkaStreams StreamsConfig]
            [org.apache.kafka.streams.kstream KStreamBuilder Predicate ValueMapper]))
@@ -40,10 +41,20 @@
        (catch Exception e (log/info (.printStackTrace e)))
        (finally (log/info ""))))
 
-(defn temporary-ids
+
+(defn get-entity-and-devices
   "only to be used until we implement a correspondence from correlation id"
-  [temporary-devices device-type]
-  (update-in temporary-devices [:device-id] #(get % device-type))  )
+  [hecuba correlation-id device-type]
+  (let [response (get-entities hecuba correlation-id 10)
+        meter-type (get {"electricityConsumption" "electricityMeter"
+                         "gasConsumption" "gasMeter"} device-type)]
+    (log/info "meter-type" meter-type)
+    {:entity-id (:entity_id (first response))
+     :device-id (specter/select-one [:devices
+                                     specter/ALL
+                                     #(= (:description %) meter-type)
+                                     :device_id
+                                     ] (first response))}))
 
 (defn parse-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
@@ -56,9 +67,14 @@
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
   [hecuba temporary-devices data-in]
   (let [{:keys [measurements correlation-id]} (parse-data data-in)
-        identifier (temporary-ids temporary-devices (-> measurements first :type))]
+        device-type (-> measurements first :type)
+        devices (get-entity-and-devices hecuba correlation-id device-type)]
     ;; TODO: look up entity-id and/or devide-id
-    (post-measurements hecuba measurements (:entity-id identifier) (:device-id identifier))))
+    (if (or (nil? (:entity-id devices))
+            (nil? (:device-id devices)))
+      (do (log/error "Device or Entity for this correlation ID not found!" correlation-id)
+          (throw (Exception. "Device or Entity for this correlation ID not found:" correlation-id)))
+      (post-measurements hecuba measurements (:entity-id devices) (:device-id devices)))))
 
 (defn start-stream []
   (let [{:keys [hecuba kafka zookeeper temporary-devices] :as configuration} (config (keyword (env :profile)))

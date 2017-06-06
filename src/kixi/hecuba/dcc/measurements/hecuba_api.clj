@@ -1,8 +1,27 @@
 (ns kixi.hecuba.dcc.measurements.hecuba-api
   (:require [cheshire.core :as json]
             [clj-http.client :as http]
-            [taoensso.timbre :as timbre]
-            [franzy.admin.zookeeper.client :as client]))
+            [taoensso.timbre :as timbre]))
+
+(defn get-entities [{:keys [endpoint username password]} property-code max-entries-per-page]
+  (let [url-to-get (str endpoint
+                        "4/entities/?q=property_code:"
+                        property-code
+                        "&page=0&size="
+                        max-entries-per-page
+                        "&sort_key=programme_name.lower_case_sort&sort_order=asc")
+        ]
+    (try (-> (:body (http/get
+                     url-to-get
+                     {:basic-auth [username
+                                   password]
+                      :headers {"X-Api-Version" "2"}
+                      :content-type :json
+                      :socket-timeout 20000
+                      :conn-timeout 20000}))
+             (json/parse-string true)
+             (get-in [:entities]))
+         (catch Exception e (timbre/error e)))))
 
 (defn post-measurements
   "Create the http post request for measurements
@@ -24,4 +43,4 @@
            :accept "application/json"})
          (catch Exception e (doall (str "Caught Exception " (.getMessage e))
                                    (timbre/error e "> There was an error during the upload to entity " entity-id)))
-         (finally {:message "push-payload-to-hecuba complete."}))))
+         (finally {:message "post-measurements complete."}))))
