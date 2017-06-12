@@ -1,4 +1,7 @@
 #!/bin/bash
+
+/root/download-secrets.sh
+
 export MALLOC_ARENA_MAX=4 # Stop the JVM from being allowed to use up all of
 # Docker's virtual memory. Use if it's a problem
 # see https://siddhesh.in/posts/malloc-per-thread-arenas-in-glibc.html
