@@ -8,7 +8,7 @@ RUN apk add --update libgcc libstdc++ bash bash-doc bash-completion
 
 ADD deployment/run-stream.sh /opt/run-stream.sh
 ADD target/kixi-hecuba-measurements.jar /opt/kixi-hecuba-measurements.jar
-ADD scripts/download-secrets.sh /root/download-secrets.sh
+ADD deployment/download-secrets.sh /root/download-secrets.sh
 
 ENTRYPOINT ["/init"]
 
