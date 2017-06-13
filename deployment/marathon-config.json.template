@@ -5,6 +5,8 @@
       "image": "mastodonc/kixi.hecuba.dcc.measurements:git-@@TAG@@",
       "parameters": [
          {"key": "env", "value": "AWS_REGION=@@AWS_REGION@@"},
+         {"key": "env", "value": "PROFILE=@@PROFILE@@"},
+         {"key": "env", "value": "SECRETS_BUCKET=@@SECRETS_BUCKET@@"},
 	 {"key": "shm-size", "value": "1536m"}
       ],
       "network": "BRIDGE",

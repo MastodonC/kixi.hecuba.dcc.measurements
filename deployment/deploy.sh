@@ -4,9 +4,10 @@ MASTER=$1
 TAG=$2
 INSTANCES_COUNT=$3
 AWS_REGION=eu-west-1
-PROFILE=staging
+PROFILE=$4 # staging
+SECRETS_BUCKET=$5 # est-nonprod-hecuba-credentials
 
-sed -e "s/@@TAG@@/$TAG/" -e "s/@@INSTANCES_COUNT@@/$INSTANCES_COUNT/" -e "s/@@AWS_REGION@@/$AWS_REGION/" -e "s/@@PROFILE@@/$PROFILE/" marathon-config.json.template > marathon-config.json
+sed -e "s/@@TAG@@/$TAG/" -e "s/@@INSTANCES_COUNT@@/$INSTANCES_COUNT/" -e "s/@@AWS_REGION@@/$AWS_REGION/" -e "s/@@PROFILE@@/$PROFILE/" -e "s/@@SECRETS_BUCKET@@/$SECRETS_BUCKET/" marathon-config.json.template > marathon-config.json
 
 
 # we want curl to output something we can use to indicate success/failure
