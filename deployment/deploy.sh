@@ -4,8 +4,9 @@ MASTER=$1
 TAG=$2
 INSTANCES_COUNT=$3
 AWS_REGION=eu-west-1
+PROFILE=staging
 
-sed -e "s/@@TAG@@/$TAG/" -e "s/@@INSTANCES_COUNT@@/$INSTANCES_COUNT/" -e "s/@@AWS_REGION@@/$AWS_REGION/" marathon-config.json.template > marathon-config.json
+sed -e "s/@@TAG@@/$TAG/" -e "s/@@INSTANCES_COUNT@@/$INSTANCES_COUNT/" -e "s/@@AWS_REGION@@/$AWS_REGION/" -e "s/@@PROFILE@@/$PROFILE/" marathon-config.json.template > marathon-config.json
 
 
 # we want curl to output something we can use to indicate success/failure
