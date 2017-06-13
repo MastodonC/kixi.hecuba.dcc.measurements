@@ -1,0 +1,26 @@
+{
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "mastodonc/kixi.hecuba.dcc.measurements:git-915649b",
+      "parameters": [
+         {"key": "env", "value": "AWS_REGION=eu-west-1"},
+         {"key": "env", "value": "PROFILE=@@PROFILE@@"},
+	 {"key": "shm-size", "value": "1536m"}
+      ],
+      "network": "BRIDGE",
+      "portMappings": [
+          {
+              "containerPort": 18082,
+              "hostPort": 18082,
+              "protocol": "tcp"
+          }
+      ]
+    }
+  },
+  "constraints": [["hostname", "UNIQUE"]],
+  "mem": 2048,
+  "cpus": 1,
+  "instances": 1,
+  "id": "kixi.hecuba.dcc.measurements"
+}

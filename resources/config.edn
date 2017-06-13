@@ -1,9 +1,11 @@
-{:hecuba {:endpoint #profile {:local "http://www.getembed.com/"}
-          :login #profile {:local #include #join [#env HOME "/.hecuba.login.edn"]}
+{:hecuba {:endpoint #profile {:local "http://www.getembed.com/"
+                              :staging "http://www.getembed.com/"}
+          :login #profile {:local #include #join [#env HOME "/.hecuba.login.edn"]
+                           :staging #include "/root/.hecuba.login.edn"}
           :username ^:ref [:hecuba :login :username]
           :password ^:ref [:hecuba :login :password]}
- :zookeeper #profile {:local "localhost:2181/"}
- :kafka #profile {:local {:consumer-group "hecuba"
-                          :topic "hecuba.measurements"
-
-                          :dead-letter "hecuba.measurements.error"}}}
+ :zookeeper #profile {:local "localhost:2181/"
+                      :staging "master.mesos:2181/dcos-service-confluent-kafka"}
+ :kafka {:consumer-group "hecuba"
+         :topic "hecuba.measurements"
+         :dead-letter "hecuba.measurements.error"}}
