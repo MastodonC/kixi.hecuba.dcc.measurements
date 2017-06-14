@@ -6,6 +6,6 @@
           :password ^:ref [:hecuba :login :password]}
  :zookeeper #profile {:local "localhost:2181/"
                       :staging "master.mesos:2181/dcos-service-confluent-kafka"}
- :kafka {:consumer-group "hecuba"
-         :topic "hecuba.measurements"
-         :dead-letter "hecuba.measurements.error"}}
+ :kafka {:consumer-group "hecuba-measurements"
+         :topic "measurements"
+         :dead-letter "measurements-error"}}
