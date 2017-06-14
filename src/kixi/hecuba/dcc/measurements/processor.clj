@@ -79,7 +79,7 @@
 (defn start-stream []
   (let [{:keys [hecuba kafka zookeeper temporary-devices] :as configuration} (config (keyword (env :profile)))
         _ (log/info "PROFILE" (env :profile))
-        _ (log/info "CONFIGURATION" configuration)
+        _ (log/info "CONFIGURATION" (dissoc configuration :hecuba))
         broker-list (broker-str {:servers zookeeper})
         props {StreamsConfig/APPLICATION_ID_CONFIG,  (:consumer-group kafka)
                StreamsConfig/BOOTSTRAP_SERVERS_CONFIG, broker-list

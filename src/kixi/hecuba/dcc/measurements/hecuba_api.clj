@@ -9,8 +9,8 @@
                         property-code
                         "&page=0&size="
                         max-entries-per-page
-                        "&sort_key=programme_name.lower_case_sort&sort_order=asc")
-        ]
+                        "&sort_key=programme_name.lower_case_sort&sort_order=asc")]
+    (timbre/infof "get url: %s" url-to-get)
     (try (-> (:body (http/get
                      url-to-get
                      {:basic-auth [username
@@ -29,8 +29,8 @@
   [{:keys [endpoint username password]} json-payload entity-id device-id]
   (let [json-to-send (json/generate-string {:measurements json-payload})
         _ (timbre/info endpoint username password)
-        endpoint (str endpoint "entities/" entity-id "/devices/" device-id "/measurements/")]
-    (timbre/infof "Using endpoint: %s" endpoint)
+        endpoint (str endpoint "4/entities/" entity-id "/devices/" device-id "/measurements/")]
+    (timbre/infof "post url: %s" endpoint)
 
     (try (http/post
           endpoint
