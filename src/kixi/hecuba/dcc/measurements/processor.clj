@@ -63,9 +63,21 @@
       deserialize-message
       process))
 
+(defn pre-process-data
+  "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
+  [hecuba data-in]
+  (let [{:keys [measurements correlation-id]} (parse-data data-in)
+        device-type (-> measurements first :type)
+        devices (get-entity-and-devices hecuba correlation-id device-type)]
+    ;; TODO: look up entity-id and/or devide-id
+    (when (or (nil? (:entity-id devices))
+              (nil? (:device-id devices)))
+      (do (log/error "Device or Entity for this correlation ID not found!" correlation-id)
+          (throw (Exception. (str "Device or Entity for this correlation ID not found:" correlation-id)))))))
+
 (defn process-data
   "parse xml and transform to JSON for the hecuba api, then POST to hecuba"
-  [hecuba temporary-devices data-in]
+  [hecuba data-in]
   (let [{:keys [measurements correlation-id]} (parse-data data-in)
         device-type (-> measurements first :type)
         devices (get-entity-and-devices hecuba correlation-id device-type)]
@@ -73,11 +85,11 @@
     (if (or (nil? (:entity-id devices))
             (nil? (:device-id devices)))
       (do (log/error "Device or Entity for this correlation ID not found!" correlation-id)
-          (throw (Exception. "Device or Entity for this correlation ID not found:" correlation-id)))
+          (throw (Exception. (str "Device or Entity for this correlation ID not found:" correlation-id))))
       (post-measurements hecuba measurements (:entity-id devices) (:device-id devices)))))
 
 (defn start-stream []
-  (let [{:keys [hecuba kafka zookeeper temporary-devices] :as configuration} (config (keyword (env :profile)))
+  (let [{:keys [hecuba kafka zookeeper] :as configuration} (config (keyword (env :profile)))
         _ (log/info "PROFILE" (env :profile))
         _ (log/info "CONFIGURATION" (dissoc configuration :hecuba))
         broker-list (broker-str {:servers zookeeper})
@@ -97,7 +109,7 @@
     (log/infof "Kafka Topic: %s" (:topic kafka))
     (log/infof "Kafka Consumer Group: %s" (:consumer-group kafka))
     (do (let [partitioned-stream (.branch (.stream builder input-topic)
-                                          (into-array Predicate [(reify Predicate (test [_ _ v] (try (do (parse-data v)
+                                          (into-array Predicate [(reify Predicate (test [_ _ v] (try (do (pre-process-data hecuba v)
                                                                                                          true)
                                                                                                      (catch Throwable t
                                                                                                        (do (log/error t)
@@ -105,7 +117,7 @@
                                                                  (reify Predicate (test [_ _ _] true))]))
               dead-letter-topic-stream (.stream builder dead-letter-topic)]
           (-> (aget partitioned-stream 0)
-              (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba temporary-devices v))))
+              (.mapValues (reify ValueMapper (apply [_ v] (process-data hecuba v))))
               (.print))
           (-> (aget partitioned-stream 1)
               (.to dead-letter-topic-name)))
