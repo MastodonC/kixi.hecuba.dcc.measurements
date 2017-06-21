@@ -19,6 +19,24 @@
                             :content])
        first))
 
+(defn- device-id
+  [parsed]
+  (->> parsed
+       (specter/select-one [:content
+                            specter/ALL
+                            (partial has-tag? :DeviceID)
+                            :content])
+       first))
+
+(defn- mpxn
+  [parsed]
+  (->> parsed
+       (specter/select-one [:content
+                            specter/ALL
+                            (partial has-tag? :MPxN)
+                            :content])
+       first))
+
 (defn- measurement-type
   [measurement]
   (get
@@ -60,6 +78,19 @@
                         (partial has-tag? :Body)
                         :content
                         specter/ALL
+                        (partial has-tag? :GBCSResponse)
+                        :content
+                        specter/ALL
+                        (partial has-tag? :Body)
+                        :content
+                        specter/ALL
+                        (partial has-tag? :ResponseMessage)
+                        :content
+                        specter/ALL
+                        (partial has-tag? :SMETSData)
+                        :content
+                        specter/ALL
+                        (partial has-tag? :ReadActiveImportProfileDataRsp)
                         :content
                         specter/ALL])
        (mapv measurement-information)))
@@ -73,4 +104,6 @@
   [data-in]
   (let [parsed (parse data-in)]
     (hash-map :measurements (measurements parsed)
-              :correlation-id (correlation-id parsed))))
+              :correlation-id (correlation-id parsed)
+              :mpxn (mpxn parsed)
+              :device-id (device-id parsed))))
